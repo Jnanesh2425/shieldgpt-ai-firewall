@@ -1,6 +1,7 @@
 const axios = require('axios');
 const PromptLog = require('../models/promptLog');
 const { generateResponse } = require('../services/ollamaService');
+const { sanitizePrompt } = require('../services/sanitizerService');
 const { recordViolation, getBlockedIPs, getIPStats } = require('../middleware/rateLimiter');
 
 const handlePrompt = async (req, res) => {
@@ -49,6 +50,8 @@ const handlePrompt = async (req, res) => {
 
     // Step 4: Generate response based on action
     let response;
+    let sanitizedPrompt = null;
+    let sanitizationReason = null;
 
     if (action === 'BLOCKED') {
       const warningMsg = rateLimitInfo && !rateLimitInfo.blocked
@@ -59,8 +62,13 @@ const handlePrompt = async (req, res) => {
 
       response = `🚫 This prompt has been BLOCKED by the AI Firewall.\n\n**Threat Type:** ${label}\n**Risk Score:** ${Math.round(riskScore * 100)}%\n**Confidence:** ${Math.round(confidence * 100)}%\n\nThis request was identified as potentially harmful and was NOT forwarded to the LLM.${warningMsg}`;
     } else if (action === 'SANITIZED') {
-      response = await generateResponse(prompt);
-      response = `⚠️ *[This prompt was sanitized before processing]*\n\n${response}`;
+      // Actually sanitize the prompt
+      const sanitization = sanitizePrompt(prompt);
+      sanitizedPrompt = sanitization.sanitized;
+      sanitizationReason = sanitization.reason;
+
+      // Send SANITIZED prompt to LLM (not the original)
+      response = await generateResponse(sanitizedPrompt);
     } else {
       response = await generateResponse(prompt);
     }
@@ -80,6 +88,8 @@ const handlePrompt = async (req, res) => {
     // Step 6: Send response
     res.json({
       prompt,
+      sanitizedPrompt,
+      sanitizationReason,
       label,
       confidence,
       riskScore,

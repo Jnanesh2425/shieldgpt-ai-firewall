@@ -254,6 +254,9 @@ const ChatPage = () => {
               response={currentResult.response}
               isLoading={isLoadingLLM}
               action={currentResult.action}
+              originalPrompt={currentResult.prompt}
+              sanitizedPrompt={currentResult.sanitizedPrompt}
+              sanitizationReason={currentResult.sanitizationReason}
             />
           )}
 

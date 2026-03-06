@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 
-const LLMResponse = ({ response, isLoading, action }) => {
+const LLMResponse = ({ response, isLoading, action, originalPrompt, sanitizedPrompt, sanitizationReason }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
@@ -96,7 +96,47 @@ const LLMResponse = ({ response, isLoading, action }) => {
               </div>
             </div>
           ) : (
-            <div className="prose prose-invert prose-sm max-w-none">
+            <div>
+              {/* Sanitization Comparison - only for SANITIZED prompts */}
+              {action === 'SANITIZED' && sanitizedPrompt && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-5 rounded-xl overflow-hidden border border-yellow-500/20"
+                >
+                  <div className="bg-yellow-500/10 px-4 py-2 flex items-center gap-2 border-b border-yellow-500/20">
+                    <span className="text-lg">🧹</span>
+                    <span className="text-yellow-400 font-semibold text-sm">Prompt Sanitized</span>
+                    <span className="text-gray-500 text-xs ml-auto">Modified before forwarding to LLM</span>
+                  </div>
+
+                  {/* Original */}
+                  <div className="px-4 py-3 bg-red-500/5 border-b border-gray-700/30">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="bg-red-500/20 text-red-400 text-[10px] font-bold px-2 py-0.5 rounded-full">ORIGINAL</span>
+                    </div>
+                    <p className="text-red-300/80 text-sm line-through">{originalPrompt}</p>
+                  </div>
+
+                  {/* Sanitized */}
+                  <div className="px-4 py-3 bg-green-500/5">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">SANITIZED</span>
+                    </div>
+                    <p className="text-green-300 text-sm">{sanitizedPrompt}</p>
+                  </div>
+
+                  {/* Reason */}
+                  {sanitizationReason && (
+                    <div className="px-4 py-2 bg-gray-800/30 border-t border-gray-700/30">
+                      <p className="text-gray-500 text-xs">💡 {sanitizationReason}</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Response text */}
+              <div className="prose prose-invert prose-sm max-w-none">
               <ReactMarkdown
                 components={{
                   p: ({ children }) => <p className="text-gray-200 leading-relaxed mb-3">{children}</p>,
@@ -124,6 +164,7 @@ const LLMResponse = ({ response, isLoading, action }) => {
                   transition={{ duration: 0.5, repeat: Infinity }}
                 />
               )}
+              </div>
             </div>
           )}
         </div>

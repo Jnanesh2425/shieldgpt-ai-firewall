@@ -177,6 +177,36 @@ def classify_prompt(prompt):
                         }
 
     # ============================================
+    # STEP 3B: BORDERLINE content — mentions danger but not explicit instructions
+    # Examples: "list harmful chemicals", "what chemicals are in bombs"
+    # These get SANITIZED, not BLOCKED
+    # ============================================
+    borderline_patterns = [
+        (["chemical", "chemicals"], ["harmful", "dangerous", "toxic", "lethal", "deadly", "bomb", "poison", "weapon", "kill"]),
+        (["substance", "substances"], ["harmful", "dangerous", "toxic", "lethal", "deadly", "illegal", "banned"]),
+        (["bomb", "explosive"], ["chemical", "list", "ingredient", "component", "material", "what"]),
+        (["weapon"], ["chemical", "type", "list", "category", "what"]),
+        (["drug", "drugs"], ["list", "type", "name", "what", "example", "harmful", "dangerous", "illegal"]),
+        (["hack", "hacking"], ["type", "what", "example", "method", "technique", "common", "list"]),
+        (["malware", "virus"], ["type", "what", "example", "list", "common", "dangerous", "harmful"]),
+        (["attack"], ["type", "example", "list", "common", "cyber", "method"]),
+        (["poison", "poisonous"], ["list", "type", "what", "example", "plant", "chemical", "common"]),
+        (["steal", "theft"], ["type", "method", "common", "what", "example"]),
+    ]
+
+    for nouns, contexts in borderline_patterns:
+        for noun in nouns:
+            if noun in prompt_clean:
+                for ctx in contexts:
+                    if ctx in prompt_clean:
+                        print(f"   ⚠️ Borderline content detected: '{noun}' + '{ctx}'")
+                        return {
+                            "label": "PROMPT_INJECTION",
+                            "confidence": 0.65,
+                            "all_scores": {"PROMPT_INJECTION": 0.65, "JAILBREAK": 0.20, "SAFE": 0.15}
+                        }
+
+    # ============================================
     # STEP 4: JAILBREAK keyword detection
     # ============================================
     jailbreak_phrases = [

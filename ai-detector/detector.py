@@ -40,7 +40,11 @@ def detect():
     if result["label"] == "JAILBREAK":
         risk_score = 0.5 + (result["confidence"] * 0.5)   # Range: 0.75 - 1.0
     elif result["label"] == "PROMPT_INJECTION":
-        risk_score = 0.4 + (result["confidence"] * 0.5)   # Range: 0.67 - 0.9
+        # Scale risk based on confidence — low confidence = low risk (allows SANITIZED)
+        if result["confidence"] <= 0.7:
+            risk_score = 0.15 + (result["confidence"] * 0.4)  # Range: 0.15 - 0.43 → SANITIZED
+        else:
+            risk_score = 0.4 + (result["confidence"] * 0.5)   # Range: 0.75 - 0.9 → BLOCKED
     elif result["label"] == "SAFE":
         risk_score = max(0.0, (1 - result["confidence"]) * 0.25)  # Range: 0.0 - 0.15
 
@@ -65,7 +69,10 @@ def batch_detect():
         if result["label"] == "JAILBREAK":
             risk_score = 0.5 + (result["confidence"] * 0.5)
         elif result["label"] == "PROMPT_INJECTION":
-            risk_score = 0.4 + (result["confidence"] * 0.5)
+            if result["confidence"] <= 0.7:
+                risk_score = 0.15 + (result["confidence"] * 0.4)
+            else:
+                risk_score = 0.4 + (result["confidence"] * 0.5)
         elif result["label"] == "SAFE":
             risk_score = max(0.0, (1 - result["confidence"]) * 0.25)
         result["riskScore"] = round(risk_score, 4)
