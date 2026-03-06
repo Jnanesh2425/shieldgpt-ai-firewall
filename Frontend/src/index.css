@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+/* Reset body for full-screen layout */
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #030712;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+::-webkit-scrollbar-thumb {
+  background: #00ff88;
+  border-radius: 3px;
+}
+
+/* Glowing animations */
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 5px #00ff88, 0 0 10px #00ff88; }
+  50% { box-shadow: 0 0 20px #00ff88, 0 0 40px #00ff88; }
+}
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 5px #ff0040, 0 0 10px #ff0040; }
+  50% { box-shadow: 0 0 20px #ff0040, 0 0 40px #ff0040; }
+}
+@keyframes pulse-yellow {
+  0%, 100% { box-shadow: 0 0 5px #ffaa00, 0 0 10px #ffaa00; }
+  50% { box-shadow: 0 0 20px #ffaa00, 0 0 40px #ffaa00; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out forwards;
+}
+.animate-pulse-green {
+  animation: pulse-green 2s infinite;
+}
+.animate-pulse-red {
+  animation: pulse-red 2s infinite;
+}
+.animate-pulse-yellow {
+  animation: pulse-yellow 2s infinite;
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+.animate-count-up {
+  animation: countUp 0.6s ease-out forwards;
+}
+.gradient-shift {
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+/* Cyber grid background */
+.cyber-grid {
+  background-image: 
+    linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+  
