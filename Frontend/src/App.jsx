@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import ChatWindow from './components/ChatWindow';
+import ChatPage from './pages/Chatgpt';
 import Dashboard from './pages/Dashboard';
 import ParticleBackground from './components/ParticleBackground';
 
@@ -59,7 +59,7 @@ function App() {
       </nav>
       {/* Main Content */}
       <main className="flex-1 overflow-hidden z-10 relative">
-        {activeTab === 'chat' ? <ChatWindow /> : <Dashboard />}
+        {activeTab === 'chat' ? <ChatPage /> : <Dashboard />}
       </main>
     </div>
   );

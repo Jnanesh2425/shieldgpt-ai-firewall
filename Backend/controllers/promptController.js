@@ -2,10 +2,6 @@ const axios = require('axios');
 const PromptLog = require('../models/promptLog');
 const { generateResponse } = require('../services/ollamaService');
 
-/**
- * POST /api/prompt
- * Main gateway: classify → decide action → respond
- */
 const handlePrompt = async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -25,40 +21,39 @@ const handlePrompt = async (req, res) => {
       detection = detectionRes.data;
     } catch (err) {
       console.error('❌ Detection service error:', err.message);
-      // If detector is down, default to SAFE with low confidence
       detection = { label: 'SAFE', confidence: 0.5, riskScore: 0.1 };
     }
 
-    // Step 2: Use the risk score FROM the detector directly (don't recalculate)
     const riskScore = detection.riskScore;
     const confidence = detection.confidence;
     const label = detection.label;
 
-    // Step 3: Determine action based on label AND risk score
+    // Step 2: Determine action
     let action;
     if (label === 'JAILBREAK') {
-      action = 'BLOCKED';  // ALL jailbreak → always block
-    } else if (label === 'PROMPT_INJECTION' && riskScore > 0.5) {
       action = 'BLOCKED';
-    } else if (label === 'PROMPT_INJECTION' && riskScore > 0.3) {
-      action = 'SANITIZED';
+    } else if (label === 'PROMPT_INJECTION') {
+      if (riskScore > 0.5) action = 'BLOCKED';
+      else action = 'SANITIZED';
     } else {
       action = 'ALLOWED';
     }
 
-    // Step 4: Generate response based on action
+    // Step 3: Generate response based on action
     let response;
 
     if (action === 'BLOCKED') {
-      response = `🚫 **BLOCKED** — Your prompt was classified as **${label}** with a risk score of ${Math.round(riskScore * 100)}%.\n\nThis prompt has been blocked by the AI Firewall to prevent potential security threats. The content appears to be ${label === 'JAILBREAK' ? 'a jailbreak attempt trying to bypass AI safety restrictions or request harmful content' : 'a prompt injection attempting to extract system instructions'}.\n\n🛡️ AI Firewall is protecting the LLM from malicious inputs.`;
+      response = `🚫 This prompt has been BLOCKED by the AI Firewall.\n\n**Threat Type:** ${label}\n**Risk Score:** ${Math.round(riskScore * 100)}%\n**Confidence:** ${Math.round(confidence * 100)}%\n\nThis request was identified as potentially harmful and was NOT forwarded to the LLM. The AI Firewall has protected the system.`;
     } else if (action === 'SANITIZED') {
-      response = `⚠️ **SANITIZED** — Your prompt was flagged as potentially suspicious (${label}, risk: ${Math.round(riskScore * 100)}%).\n\nThe AI Firewall has sanitized this request. The prompt was forwarded with additional safety constraints.\n\n🛡️ Monitoring active.`;
+      // For sanitized, we still get a response but note it was sanitized
+      response = await generateResponse(prompt);
+      response = `⚠️ *[This prompt was sanitized before processing]*\n\n${response}`;
     } else {
-      // ALLOWED — Forward to LLM (smart fallback if Ollama is offline)
+      // ALLOWED — Get actual response from LLM
       response = await generateResponse(prompt);
     }
 
-    // Step 5: Save to database
+    // Step 4: Save to database
     const promptDoc = await PromptLog.create({
       prompt,
       label,
@@ -70,7 +65,7 @@ const handlePrompt = async (req, res) => {
 
     console.log(`🛡️ [${action}] "${prompt.substring(0, 50)}..." → ${label} (risk: ${Math.round(riskScore * 100)}%, conf: ${Math.round(confidence * 100)}%)`);
 
-    // Step 6: Send response
+    // Step 5: Send response
     res.json({
       prompt,
       label,
@@ -87,10 +82,6 @@ const handlePrompt = async (req, res) => {
   }
 };
 
-/**
- * GET /api/logs
- * Fetch all prompt logs (newest first)
- */
 const getLogs = async (req, res) => {
   try {
     const logs = await PromptLog.find().sort({ createdAt: -1 }).limit(100);
@@ -101,10 +92,6 @@ const getLogs = async (req, res) => {
   }
 };
 
-/**
- * GET /api/stats
- * Dashboard statistics
- */
 const getStats = async (req, res) => {
   try {
     const totalPrompts = await PromptLog.countDocuments();
