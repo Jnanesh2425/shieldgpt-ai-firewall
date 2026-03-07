@@ -567,58 +567,6 @@ When a prompt is **borderline** — it mentions dangerous topics but doesn't exp
 
 ---
 
-## ❓ Frequently Asked Questions
-
-### Q1: "Why block after 5 attempts? Why not 3 or 10?"
-
-> **Answer:** 5 is an industry-standard threshold. Too low like 2-3 would block legitimate users who accidentally trigger false positives. Too high like 10 gives attackers too many tries. 5 strikes the right balance — it gives legitimate users room for mistakes while stopping persistent attackers before they can find a vulnerability. This is the same approach used by AWS WAF and Cloudflare.
-
-### Q2: "Why 15 minutes block? Why not permanent?"
-
-> **Answer:** Permanent blocks are risky because of false positives — we might block a legitimate user forever due to one misclassification. 15 minutes is enough to deter attackers while allowing legitimate users to return. Also, in shared networks like colleges and offices, many users share the same IP address. A permanent block would affect everyone on that network. The 15-minute timeout is the industry standard used by most firewall systems.
-
-### Q3: "ChatGPT already blocks harmful prompts. Why do we need this?"
-
-> **Answer:** ChatGPT's safety is the LAST line of defense — the malicious prompt still reaches the model, consumes compute resources, and the model has to process it before deciding to refuse. Our firewall is the FIRST line — we block attacks before they even reach the LLM. This saves API costs, prevents encoded attacks that ChatGPT can't detect, and provides monitoring that ChatGPT doesn't offer. Also, ChatGPT's policies are fixed — our firewall is customizable per organization.
-
-### Q4: "What is DistilBERT? Why not use GPT for detection?"
-
-> **Answer:** DistilBERT is a lightweight version of BERT — it's 60% faster and uses 40% less memory while retaining 97% accuracy. We chose it because our firewall needs to be FAST — detection should happen in milliseconds, not seconds. Using GPT for detection would be too slow and expensive — it's like using a nuclear reactor to power a light bulb. DistilBERT gives us the speed we need for real-time classification.
-
-### Q5: "How does sanitization work?"
-
-> **Answer:** When a prompt is borderline — for example, it mentions dangerous topics but doesn't explicitly ask how to do something harmful — we rewrite it to a safe educational version. For example, "list chemicals used in bombs" becomes "list common chemicals studied in chemistry and their safety classifications." The LLM then answers the safe version. The user gets useful educational information without the dangerous specifics.
-
-### Q6: "How do you detect Base64 encoded attacks?"
-
-> **Answer:** We check if the input has a high ratio of Base64-valid characters. If 90% or more characters match the Base64 alphabet and the string is longer than 16 characters, we attempt to decode it. If the decoded result is readable text, we then run our AI classifier on the decoded content. If it's malicious, we block it. This catches attackers who try to hide harmful prompts by encoding them.
-
-### Q7: "What happens if your model misclassifies a safe prompt?"
-
-> **Answer:** False positives are a valid concern. That's why we use a confidence threshold. Only prompts with high confidence scores get blocked. Borderline cases get sanitized instead of blocked — so the user still gets a response, just a safer version. Also, our rate limiting only counts BLOCKED prompts — so a few false positives won't get a user's IP blocked. They need 5 consecutive blocks within 10 minutes for that.
-
-### Q8: "Can this work with cloud LLMs like OpenAI API?"
-
-> **Answer:** Absolutely. Our firewall is LLM-agnostic. Right now we use Ollama locally, but the architecture is designed as a middleware. You just change the endpoint. Instead of sending to Ollama, you send to OpenAI's API or Google's Gemini API. The firewall sits in front — it doesn't care which LLM is behind it.
-
-### Q9: "What's the accuracy of your model?"
-
-> **Answer:** Our DistilBERT model achieves approximately 90-95% accuracy on prompt classification. For jailbreak detection specifically, it's higher — around 95% because jailbreak patterns are more distinct. The encoding detection adds another layer that catches attacks the model alone might miss.
-
-### Q10: "How is this different from a simple keyword filter?"
-
-> **Answer:** A keyword filter would block the word "bomb" everywhere — even in "atom bomb history for school homework." Our AI model understands CONTEXT. It knows the difference between "how to make a bomb" — which is dangerous — and "explain the history of atomic bombs" — which is educational. Plus, keyword filters can't detect encoded attacks, paraphrased attacks, or novel attack patterns. Our DistilBERT model can generalize to attacks it hasn't seen before.
-
-### Q11: "Why MongoDB? Why not SQL?"
-
-> **Answer:** MongoDB is ideal for logging because our data is semi-structured — each prompt can have different fields, varying response lengths, and optional metadata. MongoDB's document model handles this naturally. Also, MongoDB scales horizontally for high-throughput logging, and its aggregation pipeline makes it easy to generate statistics for our dashboard.
-
-### Q12: "What if the attacker uses a VPN to change IP?"
-
-> **Answer:** Good question. IP-based rate limiting is one layer. Even if they change IP, our AI model still classifies each individual prompt — so every attack still gets blocked. The rate limiting is just an additional deterrent. In a production system, we would add browser fingerprinting, session tokens, and user authentication for stronger tracking. Our current implementation demonstrates the concept.
-
----
-
 ## 🚀 Future Enhancements
 
 | # | Feature | Description |
